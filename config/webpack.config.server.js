@@ -125,6 +125,7 @@ module.exports = {
   },
   resolve: {
     modules: ["node_modules"],
+    extensions: [".js", ".jsx", ".ts", ".tsx"],
   },
   externals: [nodeExternals()],
   plugins: [new webpack.DefinePlugin(env.stringified)],
