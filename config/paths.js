@@ -3,11 +3,25 @@
 const path = require("path");
 const fs = require("fs");
 const getPublicUrlOrPath = require("react-dev-utils/getPublicUrlOrPath");
+const url = require("url");
 
 // Make sure any symlinks in the project folder are resolved:
 // https://github.com/facebook/create-react-app/issues/637
 const appDirectory = fs.realpathSync(process.cwd());
 const resolveApp = (relativePath) => path.resolve(appDirectory, relativePath);
+
+const envPublicUrl = process.env.PUBLIC_URL;
+
+function ensureSlash(inputPath, needsSlash) {
+  const hasSlash = inputPath.endsWith("/");
+  if (hasSlash && !needsSlash) {
+    return inputPath.substr(0, inputPath.length - 1);
+  } else if (!hasSlash && needsSlash) {
+    return `${inputPath}/`;
+  } else {
+    return inputPath;
+  }
+}
 
 // We use `PUBLIC_URL` environment variable or "homepage" field to infer
 // "public path" at which the app is served.
@@ -20,6 +34,13 @@ const publicUrlOrPath = getPublicUrlOrPath(
   require(resolveApp("package.json")).homepage,
   process.env.PUBLIC_URL
 );
+
+function getServedPath(appPackageJson) {
+  const publicUrl = getPublicUrlOrPath(appPackageJson);
+  const servedUrl =
+    envPublicUrl || (publicUrl ? url.parse(publicUrl).pathname : "/");
+  return ensureSlash(servedUrl, true);
+}
 
 const buildPath = process.env.BUILD_PATH || "build";
 
@@ -68,6 +89,7 @@ module.exports = {
   appNodeModules: resolveApp("node_modules"),
   swSrc: resolveModule(resolveApp, "src/service-worker"),
   publicUrlOrPath,
+  servedPath: getServedPath(resolveApp("package.json")),
   ssrIndexTs: resolveApp("src/index.server.tsx"),
   ssrBuild: resolveApp("dist"),
 };
