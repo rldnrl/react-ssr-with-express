@@ -10,4 +10,4 @@ Redux State를 주입해야하는데 다음과 같은 에러를 만났다.<br>
 ReferenceError: window is not defined
 ```
 
-$\rightarrow$ index.server.tsx 내부에서 window를 써서 그런 듯(해결)
+[O] index.server.tsx 내부에서 window를 써서 그런 듯
