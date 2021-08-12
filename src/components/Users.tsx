@@ -27,7 +27,7 @@ const Users = () => {
           ))}
         </ul>
       </div>
-      <Preloader resolve={getUsers} />
+      <Preloader resolve={() => dispatch(getUsers())} />
     </>
   )
 }
