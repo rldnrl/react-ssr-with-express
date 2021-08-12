@@ -1,4 +1,8 @@
 # React SSR with Express
+## 사용한 기술 스택
+
+> React, TypeScript, Redux-Toolkit, React-Query, Express
+
 ## 처음부터 서버 사이드 렌더링 구현해보기
 
 > 시작 동기<br> Next.js가 어떻게 돌아가는지 궁금해서
@@ -12,7 +16,11 @@ ReferenceError: window is not defined
 
 ✅ index.server.tsx 내부에서 window를 써서 그런 듯<br>
 
+<br>
+
 ---
+
+<br>
 
 ```ts
 // Users.tsx
