@@ -64,3 +64,10 @@ export default Users
 ```
 
 너무 당연하지만, `dispatch`를 해서 `users`를 채운 후에 해야하는 건데 그 부분을 놓쳤다.
+
+---
+
+<br>
+
+✅ `loadable` 이용해서 `code-splitting` 적용 <br />
+✅ `React-Query` 적용
