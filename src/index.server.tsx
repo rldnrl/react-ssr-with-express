@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react'
 import ReactDOMServer from "react-dom/server";
 import { StaticRouter } from 'react-router-dom'
 import express, { Request, Response, NextFunction } from 'express'
