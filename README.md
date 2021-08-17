@@ -16,8 +16,6 @@ ReferenceError: window is not defined
 
 ✅ index.server.tsx 내부에서 window를 써서 그런 듯<br>
 
-<br>
-
 ---
 
 <br>
