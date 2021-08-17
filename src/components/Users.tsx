@@ -3,23 +3,39 @@ import { Link } from 'react-router-dom'
 import { Preloader } from '../libs/PreloadContext'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { getUsers, selectUsers } from '../store/users/userSlice'
+import { useQuery } from 'react-query'
+import axios from 'axios'
+import { User } from '../types'
+
+export const fetchUsers = async () => {
+  try {
+    const { data } = await axios.get<User[]>(
+      "https://jsonplaceholder.typicode.com/users"
+    );
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
 
 const Users = () => {
-  const { users } = useAppSelector(selectUsers)
-  const dispatch = useAppDispatch()
+  // const { users } = useAppSelector(selectUsers)
+  // const dispatch = useAppDispatch()
 
-  useEffect(() => {
-    if (users) return
-    dispatch(getUsers())
-    console.log("실행");
-  }, [dispatch, users])
+  // useEffect(() => {
+  //   if (users) return
+  //   dispatch(getUsers())
+  //   console.log("실행");
+  // }, [dispatch, users])
+
+  const { data: users, refetch } = useQuery('users', fetchUsers)
 
   return (
     <>
       <div>
         <ul>
           {users?.map((user) => (
-            <User
+            <UserComponent
               key={user.id}
               userId={user.id}
               username={user.username}
@@ -27,17 +43,17 @@ const Users = () => {
           ))}
         </ul>
       </div>
-      <Preloader resolve={() => dispatch(getUsers())} />
+      <Preloader resolve={refetch} />
     </>
   )
 }
 
-type UserProps = {
+type UserComponentProps = {
   userId: number
   username: string
 }
 
-const User = ({ userId, username }: UserProps) => {
+const UserComponent = ({ userId, username }: UserComponentProps) => {
   return (
     <li>
       <Link to={`/users/${userId}`}>{username}</Link>

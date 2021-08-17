@@ -4,24 +4,29 @@ import { StaticRouter } from 'react-router-dom'
 import express, { Request, Response, NextFunction } from 'express'
 import App from './App'
 import path from 'path'
-import fs from 'fs'
 import { Provider } from "react-redux";
 import thunk from 'redux-thunk'
 import { applyMiddleware, createStore } from "@reduxjs/toolkit";
 import PreloadContext from "./libs/PreloadContext";
 import rootReducer from "./store/rootReducer";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { dehydrate, Hydrate } from 'react-query/hydration'
+import { ChunkExtractor, ChunkExtractorManager } from '@loadable/server'
+import { fetchUsers } from "./components/Users";
 
 // asset-manifest.json에서 파일 경로들을 조회한다.
-const manifest = JSON.parse(
-  fs.readFileSync(path.resolve('./build/asset-manifest.json'), 'utf8')
-)
+// const manifest = JSON.parse(
+//   fs.readFileSync(path.resolve('./build/asset-manifest.json'), 'utf8')
+// )
 
-const chunks = Object.keys(manifest.files)
-  .filter(key => /chunk\.js$/.exec(key))
-  .map(key => `<script src=${manifest.files[key]}></script>`)
-  .join('')
+// const chunks = Object.keys(manifest.files)
+//   .filter(key => /chunk\.js$/.exec(key))
+//   .map(key => `<script src=${manifest.files[key]}></script>`)
+//   .join('')
 
-function createPage(root: string, stateScript: string): string {
+const statsFile = path.resolve('./build/loadable-stats.json')
+
+function createPage(root: string, tags: any): string {
   return `
   <!DOCTYPE html>
   <html lang="ko">
@@ -34,16 +39,15 @@ function createPage(root: string, stateScript: string): string {
       />
       <meta name="theme-color" content="#000000" />
       <title>React Redux App</title>
+      ${tags.styles}
+      ${tags.links}
     </head>
     <body>
       <noscript>You need to enable JavaScript to run this app.</noscript>
       <div id="root">
         ${root}
       </div>
-      ${stateScript}
-      <script src="${manifest.files['runtime-main.js']}"></script>
-      ${chunks}
-      <script src="${manifest.files['main.js']}"></script>
+      ${tags.scripts}
     </body>
   </html>
   
@@ -63,14 +67,26 @@ const serverRender = async (req: Request, res: Response, next: NextFunction) => 
     promises: []
   }
 
+  const extractor = new ChunkExtractor({ statsFile })
+
+  const queryClient = new QueryClient()
+  await queryClient.prefetchQuery('users', fetchUsers)
+  const dehydratedState = dehydrate(queryClient)
+
   const jsx = (
-    <PreloadContext.Provider value={preloadContext}>
-      <Provider store={store}>
-        <StaticRouter location={req.url} context={context}>
-          <App />
-        </StaticRouter>
-      </Provider>
-    </PreloadContext.Provider>
+    <ChunkExtractorManager extractor={extractor}>
+      <PreloadContext.Provider value={preloadContext}>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>
+            <Hydrate state={dehydratedState}>
+              <StaticRouter location={req.url} context={context}>
+                <App />
+              </StaticRouter>
+            </Hydrate>
+          </QueryClientProvider>
+        </Provider>
+      </PreloadContext.Provider>
+    </ChunkExtractorManager>
   )
 
   ReactDOMServer.renderToStaticMarkup(jsx)
@@ -86,9 +102,18 @@ const serverRender = async (req: Request, res: Response, next: NextFunction) => 
   // JSON -> 문자열
   // 악성 스크립트가 실행되는 것을 방지하기 위해서 <를 치환 처리한다.
   const stateString = JSON.stringify(store.getState()).replace(/</g, '\\u003c')
-  const stateScript = `<script>__REDUX_STATE__=${stateString}</script>` // 리덕스 초기 상태를 스크립트로 주입한다.
+  const stateScript = `
+    <script>__REDUX_STATE__=${stateString}</script>
+    <script>__REACT_QUERY_STATE__=${JSON.stringify(dehydratedState)}</script>
+  ` // 리덕스 초기 상태와 React-Query 초기 상태를 스크립트로 주입한다.
 
-  res.send(createPage(root, stateScript)) // 결과물을 응답
+  const tags = {
+    scripts: stateScript + extractor.getScriptTags(), // 스크립트 앞 부분에 리덕스와 React-Query 상태 넣기
+    links: extractor.getLinkTags(),
+    styles: extractor.getStyleTags()
+  } as any
+
+  res.send(createPage(root, tags)) // 결과물을 응답
 }
 
 const serve = express.static(path.resolve('./build'), {

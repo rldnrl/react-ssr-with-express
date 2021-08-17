@@ -5,17 +5,21 @@ import App from './App';
 import { store } from './store';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from 'react-query'
+import { Hydrate } from 'react-query/hydration'
 import * as serviceWorker from './serviceWorker';
 
+const dehydratedState = window.__REACT_QUERY_STATE__
 const queryClient = new QueryClient()
 
 ReactDOM.render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <Hydrate state={dehydratedState}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </Hydrate>
       </QueryClientProvider>
     </Provider>
   </React.StrictMode>,
